@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finanzas por voz</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icono-192.png">
+<link rel="apple-touch-icon" href="icono-192.png">
+<meta name="theme-color" content="#1f5f4a">
+<style>
+  :root {
+    --fondo: #f6f4ef; --tarjeta: #ffffff; --texto: #1d2420; --suave: #5f6b64;
+    --marca: #1f5f4a; --marca-texto: #ffffff; --borde: #dcd8cf; --error: #b03a2e; --ok: #1f7a4d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --fondo: #121614; --tarjeta: #1c221f; --texto: #e8ece9; --suave: #9aa79f;
+      --marca: #3fa37c; --marca-texto: #08130e; --borde: #2c3530; --error: #e07a6f; --ok: #5cc995; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto);
+    font: 17px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 480px; margin: 0 auto; padding: 24px 16px 40px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--suave); font-size: 14px; margin: 0 0 28px; }
+  #mic { display: flex; align-items: center; justify-content: center; width: 168px; height: 168px;
+    margin: 0 auto 20px; border-radius: 50%; border: 0; background: var(--marca); color: var(--marca-texto);
+    font-size: 18px; font-weight: 600; cursor: pointer; flex-direction: column; gap: 6px;
+    box-shadow: 0 6px 24px rgba(0,0,0,.18); transition: transform .15s; }
+  #mic svg { width: 52px; height: 52px; }
+  #mic.escuchando { animation: pulso 1.2s ease-in-out infinite; }
+  @keyframes pulso { 50% { transform: scale(1.06); } }
+  #estado { text-align: center; color: var(--suave); min-height: 1.5em; margin: 0 0 16px; }
+  .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+  #dicho { font-style: italic; color: var(--suave); }
+  #respuesta.ok { color: var(--ok); font-weight: 600; }
+  #respuesta.error { color: var(--error); font-weight: 600; }
+  form { display: flex; gap: 8px; }
+  input { flex: 1; min-width: 0; font: inherit; padding: 10px 12px; border-radius: 10px;
+    border: 1px solid var(--borde); background: var(--tarjeta); color: var(--texto); }
+  button.sec { font: inherit; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--marca);
+    background: transparent; color: var(--texto); cursor: pointer; }
+  ul { list-style: none; padding: 0; margin: 0; font-size: 14px; color: var(--suave); }
+  li { padding: 6px 0; border-top: 1px solid var(--borde); }
+  li:first-child { border-top: 0; }
+  .oculto { display: none; }
+  label { display: block; font-size: 14px; color: var(--suave); margin-bottom: 6px; }
+  a { color: var(--marca); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Finanzas por voz</h1>
+  <p class="sub">Toca y di, por ejemplo: "gasté 15 dólares en ferretería".</p>
+
+  <section id="ajustes" class="tarjeta oculto">
+    <label for="clave">Escribe tu clave (menú "Finanzas por voz → Ver mi clave" en tu hoja). Se guarda solo en este teléfono.</label>
+    <div id="filaUrl" class="oculto" style="margin-bottom:8px">
+      <label for="url">Enlace de tu hoja (aplicación web)</label>
+      <input id="url" type="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec">
+    </div>
+    <form id="formClave"><input id="clave" type="password" autocomplete="off" placeholder="Clave"><button class="sec">Guardar</button></form>
+  </section>
+
+  <button id="mic" type="button" aria-label="Hablar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
+    <span id="micTexto">Hablar</span>
+  </button>
+  <p id="estado"></p>
+
+  <section class="tarjeta">
+    <div id="dicho">Aquí aparece lo que dijiste.</div>
+    <div id="respuesta"></div>
+  </section>
+
+  <section class="tarjeta">
+    <form id="formTexto"><input id="texto" autocomplete="off" placeholder="O escríbelo aquí"><button class="sec">Enviar</button></form>
+  </section>
+
+  <section class="tarjeta">
+    <label>Últimos anotados en este teléfono</label>
+    <ul id="historial"></ul>
+  </section>
+
+  <p class="sub" style="text-align:center"><a href="#" id="cambiar">Cambiar clave</a></p>
+</main>
+<script>
+(function () {
+  var enAppsScript = typeof google !== 'undefined' && google.script && google.script.run;
+  var $ = function (id) { return document.getElementById(id); };
+  var guardar = function (k, v) { try { localStorage.setItem('fpv_' + k, v); } catch (e) {} };
+  var leer = function (k) { try { return localStorage.getItem('fpv_' + k) || ''; } catch (e) { return ''; } };
+
+  // Ajustes por enlace: …#url=…&clave=…  (para la versión fuera de Google)
+  var hash = new URLSearchParams(location.hash.slice(1));
+  if (hash.get('url')) guardar('url', hash.get('url'));
+  if (hash.get('clave')) guardar('clave', hash.get('clave'));
+  if (hash.toString()) history.replaceState(null, '', location.pathname + location.search);
+
+  var idioma = leer('idioma') || 'es-ES';
+
+  function faltanAjustes() { return !leer('clave') || (!enAppsScript && !leer('url')); }
+  function mostrarAjustes(si) {
+    $('ajustes').classList.toggle('oculto', !si);
+    $('filaUrl').classList.toggle('oculto', enAppsScript);
+    $('url').value = leer('url');
+  }
+  mostrarAjustes(faltanAjustes());
+
+  $('formClave').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if ($('clave').value.trim()) guardar('clave', $('clave').value.trim());
+    if (!enAppsScript && $('url').value.trim()) guardar('url', $('url').value.trim());
+    $('clave').value = '';
+    mostrarAjustes(faltanAjustes());
+  });
+  $('cambiar').addEventListener('click', function (e) { e.preventDefault(); mostrarAjustes(true); });
+
+  function hablar(texto) {
+    if (!('speechSynthesis' in window)) return;
+    var u = new SpeechSynthesisUtterance(texto); u.lang = idioma;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }
+
+  function pintarHistorial() {
+    var h = []; try { h = JSON.parse(leer('historial') || '[]'); } catch (e) {}
+    $('historial').innerHTML = '';
+    h.forEach(function (x) { var li = document.createElement('li'); li.textContent = x; $('historial').appendChild(li); });
+  }
+  function anadirHistorial(x) {
+    var h = []; try { h = JSON.parse(leer('historial') || '[]'); } catch (e) {}
+    h.unshift(x); guardar('historial', JSON.stringify(h.slice(0, 5))); pintarHistorial();
+  }
+  pintarHistorial();
+
+  function mostrar(r) {
+    $('respuesta').textContent = r.mensaje;
+    $('respuesta').className = r.ok ? 'ok' : 'error';
+    $('estado').textContent = '';
+    if (r.idioma) { idioma = r.idioma; guardar('idioma', r.idioma); }
+    if (r.ok && /^Anotado|^Borré/.test(r.mensaje)) anadirHistorial(r.mensaje);
+    if (!r.ok && /Clave/.test(r.mensaje)) mostrarAjustes(true);
+    hablar(r.mensaje);
+  }
+
+  function enviar(texto) {
+    texto = String(texto || '').trim();
+    if (!texto) return;
+    if (faltanAjustes()) { mostrarAjustes(true); return; }
+    $('dicho').textContent = '"' + texto + '"';
+    $('respuesta').textContent = ''; $('estado').textContent = 'Anotando…';
+    if (enAppsScript) {
+      google.script.run.withSuccessHandler(mostrar)
+        .withFailureHandler(function (e) { mostrar({ ok: false, mensaje: 'No se pudo anotar: ' + e.message }); })
+        .procesarDesdePagina(leer('clave'), texto);
+    } else {
+      fetch(leer('url'), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ clave: leer('clave'), texto: texto, origen: 'voz' }) })
+        .then(function (r) { return r.json(); }).then(mostrar)
+        .catch(function () { mostrar({ ok: false, mensaje: 'No se pudo conectar. Revisa el enlace y tu internet.' }); });
+    }
+  }
+
+  $('formTexto').addEventListener('submit', function (e) { e.preventDefault(); enviar($('texto').value); $('texto').value = ''; });
+
+  var Reconocimiento = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var rec = null, escuchando = false;
+  if (Reconocimiento) {
+    rec = new Reconocimiento();
+    rec.lang = idioma; rec.interimResults = true; rec.maxAlternatives = 1; rec.continuous = false;
+    rec.onstart = function () { escuchando = true; $('mic').classList.add('escuchando'); $('micTexto').textContent = 'Escuchando…'; $('estado').textContent = 'Habla ahora'; };
+    rec.onend = function () { escuchando = false; $('mic').classList.remove('escuchando'); $('micTexto').textContent = 'Hablar'; if ($('estado').textContent === 'Habla ahora') $('estado').textContent = ''; };
+    rec.onresult = function (ev) {
+      var final = '', parcial = '';
+      for (var i = ev.resultIndex; i < ev.results.length; i++) {
+        if (ev.results[i].isFinal) final += ev.results[i][0].transcript; else parcial += ev.results[i][0].transcript;
+      }
+      if (parcial) $('dicho').textContent = parcial + '…';
+      if (final) enviar(final);
+    };
+    rec.onerror = function (ev) {
+      var m = { 'not-allowed': 'Permite el micrófono para esta página.', 'no-speech': 'No te escuché. Toca de nuevo.', 'network': 'Sin conexión para reconocer la voz.', 'audio-capture': 'No encuentro el micrófono.', 'service-not-allowed': 'Este navegador no deja usar la voz aquí.' }[ev.error] || 'No pude escuchar (' + ev.error + ').';
+      $('estado').textContent = m;
+    };
+  }
+
+  $('mic').addEventListener('click', function () {
+    if (!rec) { $('estado').textContent = 'Este navegador no reconoce voz: usa el teclado (el micrófono del teclado también sirve).'; $('texto').focus(); return; }
+    if (escuchando) { rec.stop(); return; }
+    rec.lang = idioma;
+    $('estado').textContent = 'Abriendo el micrófono…';
+    try { rec.start(); } catch (e) { $('estado').textContent = 'No pude abrir el micrófono (' + e.message + '). Usa el recuadro de texto.'; }
+  });
+
+  // Al abrir, empieza a escuchar sola si ya está configurada
+  if (rec && !faltanAjustes()) setTimeout(function () { try { rec.start(); } catch (e) {} }, 400);
+})();
+</script>
+</body>
+</html>
