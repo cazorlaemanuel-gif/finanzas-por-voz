@@ -37,18 +37,22 @@ Tiempo: unos 15 minutos, una sola vez. Hazlo desde una computadora.
 
 > "Cualquier usuario" significa que el enlace abre sin iniciar sesión, porque tu teléfono lo necesita así. Para anotar hace falta además **tu clave**, que solo tienes tú.
 
-## Paso 5. Mira tu clave
-En la hoja: **Finanzas por voz → Ver mi clave y mi enlace**. Anota la clave.
+## Paso 5. Saca tu enlace personal
+En la hoja: **Finanzas por voz → Ver mi clave y mi enlace**. Copia el recuadro **"Tu enlace para el teléfono"**: ya lleva dentro tu hoja y tu clave. Mándatelo a ti mismo (WhatsApp contigo mismo o un correo). No lo compartas con nadie.
 
 ## Paso 6. Ponlo en tu teléfono
-1. Mándate el enlace `/exec` a ti mismo (por correo o WhatsApp) y ábrelo en **Chrome** (en iPhone, en **Safari**).
-2. Escribe tu clave y toca **Guardar**. Solo se pide una vez.
-3. Toca el botón verde y permite el **micrófono**.
-4. Agrégalo a la pantalla de inicio:
-   - **Android:** en Chrome, menú **⋮ → Agregar a la pantalla principal** (o **Instalar app**). Ponle un nombre corto, por ejemplo **Gastos**.
+1. Abre tu enlace personal en **Chrome** (en iPhone, en **Safari**). Si se abre dentro de WhatsApp, toca **⋮ → Abrir en Chrome**.
+2. Toca el botón verde y **permite el micrófono**. Di "1 café" para probar y luego "borra el último".
+3. Instálala como app:
+   - **Android:** en Chrome, menú **⋮ → Agregar a la pantalla principal → Instalar**. Queda un ícono llamado **Gastos**.
    - **iPhone:** en Safari, botón **Compartir → Agregar a inicio**.
-5. Desde ahora: tocas el ícono **Gastos**, la página empieza a escuchar sola, dices tu gasto y te responde en voz alta.
-6. **Con la voz, sin tocar nada (Android):** di "Hey Google, abre Gastos". Si tu asistente no lo abre, usa el ícono.
+4. Desde ahora: abres **Gastos**, empieza a escuchar sola, dices "15 mercado" y te responde en voz alta.
+
+## Paso 7 (opcional). Un botón del teléfono que abre Gastos
+- **Samsung:** **Ajustes → Funciones avanzadas → Botón lateral → Pulsar dos veces → Abrir aplicación → Gastos**.
+- **Xiaomi, Motorola, Pixel y otros:** instala **Button Mapper** (gratis, Play Store), activa su permiso de accesibilidad y asigna, por ejemplo, **pulsación larga de bajar volumen → Aplicación → Gastos**.
+
+> La página pública (cazorlaemanuel-gif.github.io/finanzas-por-voz) es la misma para todos y no guarda datos: solo envía lo que dices a la hoja de cada persona. Abrir el enlace `/exec` directamente también funciona, pero ahí Google bloquea el micrófono y solo sirve el teclado.
 
 ## Qué puedes decir
 | Dices | Queda anotado |
