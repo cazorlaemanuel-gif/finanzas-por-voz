@@ -152,8 +152,18 @@
     } else {
       fetch(leer('url'), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ clave: leer('clave'), texto: texto, origen: 'voz' }) })
-        .then(function (r) { return r.json(); }).then(mostrar)
-        .catch(function () { mostrar({ ok: false, mensaje: 'No se pudo conectar. Revisa el enlace y tu internet.' }); });
+        .then(function (r) {
+          return r.text().then(function (t) {
+            try { return JSON.parse(t); }
+            catch (e) { throw new Error('la hoja respondió algo que no es la app (código ' + r.status + ')'); }
+          });
+        }).then(mostrar)
+        .catch(function (e) {
+          var u = leer('url');
+          var pista = /\/dev(\?|$)/.test(u) ? ' Tu enlace termina en /dev: usa el que termina en /exec (Implementar → Gestionar implementaciones → Copiar).'
+            : (!/\/exec(\?|$)/.test(u) ? ' El enlace debe terminar en /exec.' : '');
+          mostrar({ ok: false, mensaje: 'No se pudo conectar (' + e.message + ').' + pista });
+        });
     }
   }
 

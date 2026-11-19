@@ -96,6 +96,10 @@ function verClave() {
     SpreadsheetApp.getUi().alert('Tu clave: ' + clave + '\n\nTodavía no hay enlace: falta "Implementar > Nueva implementación > Aplicación web" (ver la guía).');
     return;
   }
+  if (/\/dev(\?|$)/.test(url)) {
+    SpreadsheetApp.getUi().alert('Tu clave: ' + clave + '\n\nGoogle me dio el enlace de prueba (termina en /dev), que no sirve en el teléfono. Copia el bueno en Apps Script: Implementar → Gestionar implementaciones → Copiar (termina en /exec).');
+    return;
+  }
   var porDefecto = configPorDefecto().filter(function (f) { return f[0] === 'Página de voz'; })[0][1];
   var pagina = String(leerConfig_(SpreadsheetApp.getActive())['Página de voz'] || porDefecto).trim();
   var personal = pagina ? pagina + '#url=' + encodeURIComponent(url) + '&clave=' + encodeURIComponent(clave) : '';
